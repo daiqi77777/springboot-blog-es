@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/bootstrap-grid.min.css">
+    <link rel="stylesheet" href="css/bootstrap-reboot.min.css">
+</head>
+<body>
+<div class="container">
+    <div class="row" style="margin-top: 20px;">
+        <div class="col-12">
+            <h2>
+                ASIN - TITLE查重
+            </h2>
+        </div>
+    </div>
+    <div class="row" style="margin-top: 20px;" id="app">
+        <div class="col-12">
+            <form class="form-inline">
+                <div class="form-group mb-2">
+                    <input type="number" class="form-control" placeholder="审核产品ID" v-model="productAuditId">
+                    <input type="text" class="form-control" placeholder="必须包含关键词，用,隔开" v-model="keyword">
+                    <input type="number" class="form-control" id="similarity-rate" placeholder="输入相似度" min="0" max="100"
+                           v-model="similarity">
+                </div>
+
+                <button type="button" class="btn btn-primary mb-2" style="margin-left: 5px;" v-on:click="searchWithEs">
+                    ES
+                </button>
+                <span style="margin-left: 10px; color: green;">耗时：{{duration}}</span>
+                <span style="margin-left: 10px; color: green;">总数：{{total}}</span>
+            </form>
+            <div class="row">
+                <div class="col-sm-4" v-for="(data,index) in dataList" style="margin-top: 20px;">
+                    <div class="card">
+                        <div class="card-body">
+                            competitorTitle
+                            <h5 class="card-title">审核产品ID:{{data.productAuditId?data.productAuditId:data.product_audit_id}}</h5>
+                            <p>{{data.competitorTitle?data.competitorTitle:data.competitor_title}} </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="./js/vue.js"></script>
+<script src="./js/axios.min.js"></script>
+<script>
+
+    var app;
+    app = new Vue({
+        el: '#app',
+        data: {
+            //url: "http://8.129.121.226:8089",
+            url: "http://localhost:8089",
+            dataList: [],
+            productAuditId: '',
+            keyword: '',
+            duration: '',
+            similarity: 70,
+            total: '',
+        },
+        methods: {
+            getCompetitorInfo: function () {
+                var that = this;
+                axios.get(this.url + "/competitorInfo", {}).then(function (response) {
+                    that.dataList = response.data;
+                })
+            },
+
+            searchWithEs: function () {
+                var that = this;
+                if (!that.similarity || that.similarity == 0 || that.similarity > 100) {
+                    alert("相似度不能为空，0 ，大于100");
+                    return false;
+                }
+                if (!that.productAuditId) {
+                    alert("审核产品ID不能为空");
+                    return false;
+                }
+
+                var param = {
+                    "type": "es",
+                    "productAuditId": that.productAuditId,
+                    "keyword": that.keyword,
+                    "similarity": that.similarity,
+                    "page": 0,
+                    "size": 100
+                };
+                axios.get(this.url +"/competitorInfoSearch", {params: param}).then(function (response) {
+                    that.dataList = response.data.list;
+                    that.total = response.data.total;
+                    that.duration = response.data.duration;
+                })
+                /*axios.get(this.url +"/competitorInfoSearch", param).then(function (response) {
+                    that.dataList = response.data.list;
+                    that.total = response.data.total;
+                    that.duration = response.data.duration;
+                })*/
+            }
+        },
+        created: function () {
+            this.getCompetitorInfo();
+        }
+    })
+
+
+</script>
+</body>
+</html>
